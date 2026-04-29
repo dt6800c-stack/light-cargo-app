@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="description" content="軽貨物業務記録自動化ツール - ワンタップで業務開始・休憩・終了を記録">
+  <meta name="theme-color" content="#0B1120">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="業務記録">
+
+  <title>業務記録 | 軽貨物</title>
+
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="manifest.json">
+
+  <!-- Favicon -->
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚛</text></svg>">
+  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚛</text></svg>">
+
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="app-container">
+
+    <!-- Header -->
+    <header class="app-header">
+      <h1 class="app-title"><span class="icon">🚛</span>業務記録</h1>
+      <div class="clock-display" id="clock">--:--:--</div>
+      <div class="date-display" id="date-display">----年--月--日（-）</div>
+    </header>
+
+    <!-- Info Bar -->
+    <div class="info-bar" aria-label="ドライバー情報">
+      <div class="info-item">
+        <span class="label">👤</span>
+        <span class="value" id="info-driver">未設定</span>
+      </div>
+      <div class="info-item">
+        <span class="label">🚗</span>
+        <span class="value" id="info-vehicle">未設定</span>
+      </div>
+    </div>
+
+    <!-- Status Indicator -->
+    <div class="status-indicator idle" id="status-indicator">
+      <span id="status-text">⏸ 業務開始前</span>
+    </div>
+
+    <!-- Event Buttons -->
+    <div class="button-grid">
+      <button class="event-btn event-btn--start" id="btn-start" aria-label="業務開始を記録">
+        <span class="btn-icon">▶️</span>
+        <span class="btn-text">業務開始</span>
+      </button>
+
+      <button class="event-btn event-btn--break-start" id="btn-break-start" disabled aria-label="休憩入を記録">
+        <span class="btn-icon">☕</span>
+        <span class="btn-text">休憩入</span>
+      </button>
+
+      <button class="event-btn event-btn--break-end" id="btn-break-end" disabled aria-label="休憩戻を記録">
+        <span class="btn-icon">🔄</span>
+        <span class="btn-text">休憩戻</span>
+      </button>
+
+      <button class="event-btn event-btn--end" id="btn-end" disabled aria-label="業務終了を記録">
+        <span class="btn-icon">⏹️</span>
+        <span class="btn-text">業務終了</span>
+      </button>
+    </div>
+
+    <!-- Special Record Button -->
+    <button class="event-btn event-btn--special" id="btn-special" disabled aria-label="特記事項を記録">
+      <span class="btn-icon">📝</span>
+      <span class="btn-text">特記事項</span>
+    </button>
+
+    <!-- Settings Link -->
+    <a href="#" class="settings-link" id="settings-link">⚙️ 設定</a>
+  </div>
+
+  <!-- Record Modal (Odometer / Notes) -->
+  <div class="modal-overlay" id="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title" id="modal-title">業務開始</h2>
+        <button class="modal-close" id="modal-close" aria-label="閉じる">✕</button>
+      </div>
+
+      <!-- オドメーター入力 -->
+      <div class="form-group" id="form-odometer">
+        <label class="form-label" for="input-odometer">
+          オドメーター値（km）<span class="required">*</span>
+        </label>
+        <input
+          type="number"
+          class="form-input"
+          id="input-odometer"
+          inputmode="numeric"
+          pattern="[0-9]*"
+          placeholder="例: 54321"
+          min="0"
+          max="999999"
+          aria-required="true"
+        >
+        <div class="form-error" id="odometer-error">有効な数値を入力してください</div>
+        <div class="form-hint">車両のオドメーター表示値を入力</div>
+      </div>
+
+      <!-- 備考入力（業務終了時のみ） -->
+      <div class="form-group" id="form-notes" style="display:none;">
+        <label class="form-label" for="input-notes">
+          主な経過地点
+        </label>
+        <textarea
+          class="form-input form-input--textarea"
+          id="input-notes"
+          placeholder="例: 四日市市内エリア配送"
+          rows="2"
+        ></textarea>
+      </div>
+
+      <!-- 特記事項（業務終了時に表示） -->
+      <div id="form-special-fields" style="display:none;">
+        <div class="form-divider">特記事項（該当時のみ）</div>
+
+        <div class="form-group">
+          <label class="form-label" for="input-waiting">🕐 荷主待機（30分以上）</label>
+          <textarea class="form-input form-input--textarea" id="input-waiting"
+            placeholder="例: ○○運輸 四日市営業所にて45分待機（荷主都合）" rows="2"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="input-loading">📦 荷役作業（1時間以上）</label>
+          <textarea class="form-input form-input--textarea" id="input-loading"
+            placeholder="例: 四日市倉庫にて手積み作業 1時間20分" rows="2"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="input-incident">⚠️ 異常事態</label>
+          <textarea class="form-input form-input--textarea" id="input-incident"
+            placeholder="例: 国道23号 渋滞による30分遅延" rows="2"></textarea>
+        </div>
+      </div>
+
+      <button class="modal-submit" id="modal-submit">
+        <span class="btn-text">記録する</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Settings Modal -->
+  <div class="modal-overlay" id="settings-modal" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+    <div class="modal-content settings-form">
+      <div class="modal-header">
+        <h2 class="modal-title" id="settings-title">⚙️ 初期設定</h2>
+        <button class="modal-close" id="settings-close" aria-label="閉じる">✕</button>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="input-driver-name">
+          ドライバー氏名 <span class="required">*</span>
+        </label>
+        <input
+          type="text"
+          class="form-input"
+          id="input-driver-name"
+          placeholder="例: 山田太郎"
+          autocomplete="name"
+        >
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="input-vehicle-id">
+          車両番号 <span class="required">*</span>
+        </label>
+        <input
+          type="text"
+          class="form-input"
+          id="input-vehicle-id"
+          placeholder="例: 三重 480 あ 1234"
+        >
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="input-api-endpoint">
+          API エンドポイント（GAS URL）
+        </label>
+        <input
+          type="url"
+          class="form-input"
+          id="input-api-endpoint"
+          placeholder="https://script.google.com/macros/s/..."
+        >
+        <div class="form-hint">未設定の場合はデモモードで動作します</div>
+      </div>
+
+      <button class="modal-submit" id="settings-save">
+        <span class="btn-text">保存する</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Special Record Modal -->
+  <div class="modal-overlay" id="special-modal" role="dialog" aria-modal="true">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title">📝 特記事項</h2>
+        <button class="modal-close" id="special-close" aria-label="閉じる">✕</button>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="sp-waiting">🕐 荷主待機（30分以上）</label>
+        <textarea class="form-input form-input--textarea" id="sp-waiting"
+          placeholder="例: ○○運輸にて45分待機（荷主都合）" rows="2"></textarea>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="sp-loading">📦 荷役作業（1時間以上）</label>
+        <textarea class="form-input form-input--textarea" id="sp-loading"
+          placeholder="例: 手積み作業 1時間20分" rows="2"></textarea>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="sp-incident">⚠️ 異常事態</label>
+        <textarea class="form-input form-input--textarea" id="sp-incident"
+          placeholder="例: 事故・運行遅延の詳細" rows="2"></textarea>
+      </div>
+
+      <div class="form-hint" style="margin-bottom:var(--spacing-md);text-align:center;">該当する項目のみ入力してください</div>
+
+      <button class="modal-submit" id="special-submit">
+        <span class="btn-text">記録する</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div class="toast-container" id="toast-container" aria-live="polite"></div>
+
+  <!-- Scripts -->
+  <script src="js/config.js"></script>
+  <script src="js/geo.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,12 @@
+# GAS backend (already deployed separately)
+gas/
+
+# Test tools
+test/
+
+# Agent files
+.gemini/
+
+# OS files
+Thumbs.db
+.DS_Store
