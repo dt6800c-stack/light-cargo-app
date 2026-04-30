@@ -58,6 +58,14 @@ const App = (() => {
     dom.spLoading = document.getElementById('sp-loading');
     dom.spIncident = document.getElementById('sp-incident');
     dom.specialSubmit = document.getElementById('special-submit');
+    // 出発前点検
+    dom.formPrecheck = document.getElementById('form-precheck');
+    dom.checkAlcohol = document.getElementById('check-alcohol');
+    dom.checkHealth = document.getElementById('check-health');
+    dom.checkEngine = document.getElementById('check-engine');
+    dom.checkLights = document.getElementById('check-lights');
+    dom.checkTires = document.getElementById('check-tires');
+    dom.checkCabin = document.getElementById('check-cabin');
   }
 
   // --- 時計 ---
@@ -129,6 +137,18 @@ const App = (() => {
     dom.formNotes.style.display = eventType === EVENT_TYPES.END ? 'block' : 'none';
     dom.formSpecialFields.style.display = eventType === EVENT_TYPES.END ? 'block' : 'none';
 
+    // 出発前点検（業務開始時のみ表示）
+    const isStart = eventType === EVENT_TYPES.START;
+    dom.formPrecheck.style.display = isStart ? 'block' : 'none';
+    if (isStart) {
+      dom.checkAlcohol.checked = false;
+      dom.checkHealth.checked = false;
+      dom.checkEngine.checked = false;
+      dom.checkLights.checked = false;
+      dom.checkTires.checked = false;
+      dom.checkCabin.checked = false;
+    }
+
     // フォームリセット
     dom.inputOdometer.value = '';
     dom.inputNotes.value = '';
@@ -165,10 +185,26 @@ const App = (() => {
       loading_work: dom.inputLoading ? dom.inputLoading.value.trim() : '',
       incident: dom.inputIncident ? dom.inputIncident.value.trim() : '',
     };
+    // 出発前点検の結果を収集
+    const precheck = {};
+    if (pendingEventType === EVENT_TYPES.START) {
+      precheck.alcohol_check = dom.checkAlcohol.checked ? '済' : '未';
+      precheck.health_check = dom.checkHealth.checked ? '良好' : '未確認';
+      const vehicleItems = [];
+      if (dom.checkEngine.checked) vehicleItems.push('エンジンルーム');
+      if (dom.checkLights.checked) vehicleItems.push('ライト');
+      if (dom.checkTires.checked) vehicleItems.push('タイヤ');
+      if (dom.checkCabin.checked) vehicleItems.push('運転席周り');
+      precheck.vehicle_check = vehicleItems.length === 4
+        ? '全項目OK'
+        : vehicleItems.length > 0
+          ? vehicleItems.join('・') + ' OK'
+          : '未点検';
+    }
     localStorage.setItem('last_odometer', odoVal);
     const eventType = pendingEventType;
     closeModal();
-    processRecord(eventType, odometer, notes, specials);
+    processRecord(eventType, odometer, notes, specials, precheck);
   }
 
   // --- 特記事項モーダル ---
@@ -199,7 +235,7 @@ const App = (() => {
   }
 
   // --- 記録送信 ---
-  async function processRecord(eventType, odometer, notes, specials) {
+  async function processRecord(eventType, odometer, notes, specials, precheck) {
     if (isProcessing) return;
     isProcessing = true;
     const btn = getButtonForEvent(eventType);
@@ -220,6 +256,9 @@ const App = (() => {
         waiting_record: (specials && specials.waiting_record) || '',
         loading_work: (specials && specials.loading_work) || '',
         incident: (specials && specials.incident) || '',
+        alcohol_check: (precheck && precheck.alcohol_check) || '',
+        health_check: (precheck && precheck.health_check) || '',
+        vehicle_check: (precheck && precheck.vehicle_check) || '',
       };
 
       const result = await Api.sendRecord(data);

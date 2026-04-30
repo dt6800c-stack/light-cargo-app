@@ -109,6 +109,49 @@
         <div class="form-hint">車両のオドメーター表示値を入力</div>
       </div>
 
+      <!-- 出発前点検（業務開始時のみ表示） -->
+      <div id="form-precheck" style="display:none;">
+        <div class="form-divider">出発前点検 ✓</div>
+
+        <label class="check-item" id="check-alcohol-label">
+          <input type="checkbox" id="check-alcohol" class="check-input">
+          <span class="check-box"></span>
+          <span class="check-text">🍺 アルコールチェック 済</span>
+        </label>
+
+        <label class="check-item" id="check-health-label">
+          <input type="checkbox" id="check-health" class="check-input">
+          <span class="check-box"></span>
+          <span class="check-text">💪 体調の管理 良好</span>
+        </label>
+
+        <div class="form-divider">🚗 車両点検</div>
+
+        <label class="check-item" id="check-engine-label">
+          <input type="checkbox" id="check-engine" class="check-input">
+          <span class="check-box"></span>
+          <span class="check-text">エンジンルーム内</span>
+        </label>
+
+        <label class="check-item" id="check-lights-label">
+          <input type="checkbox" id="check-lights" class="check-input">
+          <span class="check-box"></span>
+          <span class="check-text">ライト</span>
+        </label>
+
+        <label class="check-item" id="check-tires-label">
+          <input type="checkbox" id="check-tires" class="check-input">
+          <span class="check-box"></span>
+          <span class="check-text">タイヤ</span>
+        </label>
+
+        <label class="check-item" id="check-cabin-label">
+          <input type="checkbox" id="check-cabin" class="check-input">
+          <span class="check-box"></span>
+          <span class="check-text">運転席周り</span>
+        </label>
+      </div>
+
       <!-- 備考入力（業務終了時のみ） -->
       <div class="form-group" id="form-notes" style="display:none;">
         <label class="form-label" for="input-notes">
