@@ -278,7 +278,7 @@ const App = (() => {
             const startOdo = Number(localStorage.getItem('start_odometer') || 0);
             if (odometer !== null && startOdo > 0 && odometer > startOdo) {
               const distance = odometer - startOdo;
-              showToast('success', `🚛 本日の走行距離: ${distance} km`);
+              showToast('success', `🚛 本日の走行距離: ${distance} km`, true);
               sendNotification('業務終了', `🚛 走行距離: ${distance} km\n開始: ${startOdo} km → 終了: ${odometer} km`);
             }
             localStorage.removeItem('start_odometer');
@@ -309,16 +309,26 @@ const App = (() => {
   }
 
   // --- トースト ---
-  function showToast(type, message) {
+  function showToast(type, message, persistent) {
     const toast = document.createElement('div');
     toast.className = `toast toast--${type}`;
     toast.innerHTML = `<span class="toast-icon">${type === 'success' ? '✅' : '❌'}</span><span>${message}</span>`;
     dom.toastContainer.appendChild(toast);
     requestAnimationFrame(() => toast.classList.add('visible'));
-    setTimeout(() => {
-      toast.classList.remove('visible');
-      setTimeout(() => toast.remove(), 300);
-    }, 3500);
+
+    if (persistent) {
+      // タップするまで消えない
+      toast.style.cursor = 'pointer';
+      toast.addEventListener('click', () => {
+        toast.classList.remove('visible');
+        setTimeout(() => toast.remove(), 300);
+      });
+    } else {
+      setTimeout(() => {
+        toast.classList.remove('visible');
+        setTimeout(() => toast.remove(), 300);
+      }, 3500);
+    }
   }
 
   // --- 設定 ---
