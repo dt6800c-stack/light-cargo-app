@@ -282,6 +282,7 @@ const App = (() => {
             if (odometer !== null && startOdo > 0 && odometer > startOdo) {
               const distance = odometer - startOdo;
               showToast('success', `🚛 本日の走行距離: ${distance} km`);
+              sendNotification('業務終了', `🚛 走行距離: ${distance} km\n開始: ${startOdo} km → 終了: ${odometer} km`);
             }
             localStorage.removeItem('start_odometer');
             updateState(STATE.IDLE);
@@ -393,6 +394,39 @@ const App = (() => {
     dom.settingsSave.addEventListener('click', saveSettings);
 
     if (!Config.isConfigured()) setTimeout(openSettings, 500);
+
+    // 通知権限をリクエスト
+    requestNotificationPermission();
+  }
+
+  // --- OS通知 ---
+  function requestNotificationPermission() {
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
+  }
+
+  function sendNotification(title, body) {
+    if (!('Notification' in window) || Notification.permission !== 'granted') return;
+    try {
+      new Notification(title, {
+        body: body,
+        icon: 'icons/icon-192.png',
+        tag: 'distance-report',
+        requireInteraction: false,
+      });
+    } catch (e) {
+      // Service Worker経由が必要な環境
+      if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+        navigator.serviceWorker.ready.then(reg => {
+          reg.showNotification(title, {
+            body: body,
+            icon: 'icons/icon-192.png',
+            tag: 'distance-report',
+          });
+        });
+      }
+    }
   }
 
   if (document.readyState === 'loading') {
