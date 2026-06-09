@@ -185,21 +185,15 @@ const App = (() => {
       loading_work: dom.inputLoading ? dom.inputLoading.value.trim() : '',
       incident: dom.inputIncident ? dom.inputIncident.value.trim() : '',
     };
-    // 出発前点検の結果を収集
+    // 出発前点検の結果を収集（○マーク）
     const precheck = {};
     if (pendingEventType === EVENT_TYPES.START) {
-      precheck.alcohol_check = dom.checkAlcohol.checked ? '済' : '未';
-      precheck.health_check = dom.checkHealth.checked ? '良好' : '未確認';
-      const vehicleItems = [];
-      if (dom.checkEngine.checked) vehicleItems.push('エンジンルーム');
-      if (dom.checkLights.checked) vehicleItems.push('ライト');
-      if (dom.checkTires.checked) vehicleItems.push('タイヤ');
-      if (dom.checkCabin.checked) vehicleItems.push('運転席周り');
-      precheck.vehicle_check = vehicleItems.length === 4
-        ? '全項目OK'
-        : vehicleItems.length > 0
-          ? vehicleItems.join('・') + ' OK'
-          : '未点検';
+      precheck.alcohol_check = dom.checkAlcohol.checked ? '○' : '';
+      precheck.health_check = dom.checkHealth.checked ? '○' : '';
+      precheck.vehicle_engine = dom.checkEngine.checked ? '○' : '';
+      precheck.vehicle_lights = dom.checkLights.checked ? '○' : '';
+      precheck.vehicle_tires = dom.checkTires.checked ? '○' : '';
+      precheck.vehicle_cabin = dom.checkCabin.checked ? '○' : '';
     }
     localStorage.setItem('last_odometer', odoVal);
     const eventType = pendingEventType;
@@ -258,7 +252,10 @@ const App = (() => {
         incident: (specials && specials.incident) || '',
         alcohol_check: (precheck && precheck.alcohol_check) || '',
         health_check: (precheck && precheck.health_check) || '',
-        vehicle_check: (precheck && precheck.vehicle_check) || '',
+        vehicle_engine: (precheck && precheck.vehicle_engine) || '',
+        vehicle_lights: (precheck && precheck.vehicle_lights) || '',
+        vehicle_tires: (precheck && precheck.vehicle_tires) || '',
+        vehicle_cabin: (precheck && precheck.vehicle_cabin) || '',
       };
 
       const result = await Api.sendRecord(data);
