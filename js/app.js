@@ -405,24 +405,23 @@ const App = (() => {
 
   function sendNotification(title, body) {
     if (!('Notification' in window) || Notification.permission !== 'granted') return;
-    try {
-      new Notification(title, {
-        body: body,
-        icon: 'icons/icon-192.png',
-        tag: 'distance-report',
-        requireInteraction: false,
-      });
-    } catch (e) {
-      // Service Worker経由が必要な環境
-      if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-        navigator.serviceWorker.ready.then(reg => {
-          reg.showNotification(title, {
-            body: body,
-            icon: 'icons/icon-192.png',
-            tag: 'distance-report',
-          });
+
+    // Android PWAではService Worker経由が必須
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.ready.then(reg => {
+        reg.showNotification(title, {
+          body: body,
+          icon: 'icons/icon-192.png',
+          tag: 'distance-report',
+          vibrate: [200, 100, 200],
+          requireInteraction: true,
         });
-      }
+      }).catch(() => {
+        // SW失敗時はfallback
+        try { new Notification(title, { body, icon: 'icons/icon-192.png' }); } catch (e) {}
+      });
+    } else {
+      try { new Notification(title, { body, icon: 'icons/icon-192.png' }); } catch (e) {}
     }
   }
 

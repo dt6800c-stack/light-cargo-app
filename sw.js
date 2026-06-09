@@ -1,7 +1,7 @@
 /**
  * Service Worker - オフラインキャッシュ戦略
  */
-const CACHE_NAME = 'light-cargo-v1';
+const CACHE_NAME = 'light-cargo-v2';
 const ASSETS = [
   './',
   './index.html',
@@ -60,6 +60,23 @@ self.addEventListener('fetch', (event) => {
         caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
         return response;
       });
+    })
+  );
+});
+
+// 通知クリック時にアプリを開く
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  event.waitUntil(
+    clients.matchAll({ type: 'window' }).then((clientList) => {
+      for (const client of clientList) {
+        if (client.url.includes('light-cargo-app') && 'focus' in client) {
+          return client.focus();
+        }
+      }
+      if (clients.openWindow) {
+        return clients.openWindow('./');
+      }
     })
   );
 });
