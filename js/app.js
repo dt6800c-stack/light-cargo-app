@@ -267,10 +267,25 @@ const App = (() => {
         const locMsg = location.address ? ` (${location.address})` : '';
         showToast('success', `✓ ${eventType} を記録しました${locMsg}`);
         switch (eventType) {
-          case EVENT_TYPES.START: updateState(STATE.ACTIVE); break;
+          case EVENT_TYPES.START:
+            // 開始メーターを保存（走行距離計算用）
+            if (odometer !== null) {
+              localStorage.setItem('start_odometer', String(odometer));
+            }
+            updateState(STATE.ACTIVE);
+            break;
           case EVENT_TYPES.BREAK_START: updateState(STATE.BREAK); break;
           case EVENT_TYPES.BREAK_END: updateState(STATE.ACTIVE); break;
-          case EVENT_TYPES.END: updateState(STATE.IDLE); break;
+          case EVENT_TYPES.END:
+            // 走行距離を計算して表示
+            const startOdo = Number(localStorage.getItem('start_odometer') || 0);
+            if (odometer !== null && startOdo > 0 && odometer > startOdo) {
+              const distance = odometer - startOdo;
+              showToast('success', `🚛 本日の走行距離: ${distance} km`);
+            }
+            localStorage.removeItem('start_odometer');
+            updateState(STATE.IDLE);
+            break;
         }
       } else {
         showToast('error', `✗ ${result.message}`);
